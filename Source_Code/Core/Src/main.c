@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "i2c-lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,6 +89,17 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+  lcd_init();
+
+  lcd_send_string("Hello World");
+
+  HAL_Delay(2000);
+
+  lcd_put_cur(1, 0);
+
+  lcd_send_string("from Hung");
+
+  HAL_Delay(2000);
 
   /* USER CODE END 2 */
 
@@ -97,7 +108,7 @@ int main(void)
   while (1)
   {
 	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-	  HAL_Delay(5000);
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

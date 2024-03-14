@@ -4,7 +4,11 @@
 #include "i2c-lcd.h"
 extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
 
-#define SLAVE_ADDRESS_LCD 0x4E // change this according to ur setup
+#define SLAVE_ADDRESS_LCD 0x4E // (0100 1110 - last bit is for read or write) change this according to ur setup
+								//(0x27 << 1 <=> 010 0111 << 1 <=> 010 is fix, 4 bits after is 0_A1_A2_A3)
+
+// rs = 0 => write command, rs = 1 => write data
+// en transfer from high to low => data/cmd will be transmit
 
 void lcd_send_cmd (char cmd)
 {
@@ -12,8 +16,8 @@ void lcd_send_cmd (char cmd)
 	uint8_t data_t[4];
 	data_u = (cmd&0xf0);
 	data_l = ((cmd<<4)&0xf0);
-	data_t[0] = data_u|0x0C;  //en=1, rs=0
-	data_t[1] = data_u|0x08;  //en=0, rs=0
+	data_t[0] = data_u|0x0C;  //en=1, rs=0 (0x0C = 1100 - the second bit is for en pin)
+	data_t[1] = data_u|0x08;  //en=0, rs=0 (0x08 = 1000)
 	data_t[2] = data_l|0x0C;  //en=1, rs=0
 	data_t[3] = data_l|0x08;  //en=0, rs=0
 	HAL_I2C_Master_Transmit (&hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
@@ -25,20 +29,21 @@ void lcd_send_data (char data)
 	uint8_t data_t[4];
 	data_u = (data&0xf0);
 	data_l = ((data<<4)&0xf0);
-	data_t[0] = data_u|0x0D;  //en=1, rs=0
-	data_t[1] = data_u|0x09;  //en=0, rs=0
-	data_t[2] = data_l|0x0D;  //en=1, rs=0
-	data_t[3] = data_l|0x09;  //en=0, rs=0
+	data_t[0] = data_u|0x0D;  //en=1, rs=1
+	data_t[1] = data_u|0x09;  //en=0, rs=1
+	data_t[2] = data_l|0x0D;  //en=1, rs=1
+	data_t[3] = data_l|0x09;  //en=0, rs=1
 	HAL_I2C_Master_Transmit (&hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
 }
 
 void lcd_clear (void)
 {
-	lcd_send_cmd (0x80);
-	for (int i=0; i<70; i++)
-	{
-		lcd_send_data (' ');
-	}
+//	lcd_send_cmd (0x80);
+//	for (int i=0; i<70; i++)
+//	{
+//		lcd_send_data (' ');
+//	}
+	lcd_send_cmd(0x01);
 }
 
 void lcd_put_cur(int row, int col)
@@ -76,8 +81,7 @@ void lcd_init (void)
 	lcd_send_cmd (0x08); //Display on/off control --> D=0,C=0, B=0  ---> display off
 	HAL_Delay(1);
 	lcd_send_cmd (0x01);  // clear display
-	HAL_Delay(1);
-	HAL_Delay(1);
+	HAL_Delay(2);
 	lcd_send_cmd (0x06); //Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift)
 	HAL_Delay(1);
 	lcd_send_cmd (0x0C); //Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits)
